@@ -34,7 +34,7 @@ export function attachMenu(button, menu, getItems) {
       // who answers and how the project is; tapping it opens the chat
       const b = entry(head, 'chat-menu-head');
       const mark = el('span', 'chat-menu-mark');
-      mark.appendChild(head.working ? thinkingOrb('working', { size: 20 }) : icon(head.agent, { size: 18 }));
+      mark.appendChild(head.working ? thinkingOrb('working', { size: 20 }) : icon(head.agent, { size: 18, fallback: 'bot' }));
       mark.dataset.agent = head.agent;
       const text = el('span', 'chat-menu-text');
       text.append(el('strong', '', head.title), el('small', '', head.detail));

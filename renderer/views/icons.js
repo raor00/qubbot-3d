@@ -20,6 +20,11 @@ export function icon(name) {
   return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">${inner}</svg>`;
 }
 
+// The icon for `name`, or `fallback` when there is none (an agent without a logo, like the Simulador)
+export function iconOr(name, fallback) {
+  return icon(BRANDS[name] || ICONS[name] ? name : fallback);
+}
+
 export function applyIcons(root = document) {
   root.querySelectorAll('i[data-icon]').forEach((placeholder) => {
     const template = document.createElement('template');
