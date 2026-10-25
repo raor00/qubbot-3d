@@ -120,7 +120,8 @@ test('cancel kills the CLI and answers cancelled; the file is deleted', async ()
   const saveKey = saver();
   const login = createElevenLabsLogin({ dir, spawn, saveKey });
   const pending = login.login();
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  // Wait until the CLI has started (a fixed delay is flaky when the whole suite runs in parallel)
+  while (!spawn.runs.length) await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(login.cancel(), { ok: true });
   assert.deepEqual(await pending, { ok: false, reason: 'cancelled' });
   assert.deepEqual(spawn.runs[0].child.killed, ['SIGTERM']);
