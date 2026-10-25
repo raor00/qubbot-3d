@@ -8,7 +8,9 @@
 export const GESTURE_ATTRIBUTE = 'data-gesture';
 const NEVER = `[${GESTURE_ATTRIBUTE}="never"], #server-menu`;
 const TEXT = 'input, textarea, select, [contenteditable="true"], [contenteditable=""]';
-const CLICKABLE = [
+export const HANDS_FREE_ATTRIBUTE = 'data-hands-free';
+const HANDS_FREE = `[${HANDS_FREE_ATTRIBUTE}]`;
+export const CLICKABLE = [
   'button', 'a[href]', 'summary', 'label',
   '[role="button"]', '[role="tab"]', '[role="menuitem"]', '[role="menuitemradio"]', '[role="radio"]',
   '[role="checkbox"]', '[role="switch"]', '[role="option"]', '[role="treeitem"]', '[role="link"]',
@@ -24,13 +26,18 @@ export function labelOf(element) {
 // element: what is under the cursor (document.elementFromPoint); keyOf(element) -> a stable id
 export function uiTarget(element, { dialogOpen = false, keyOf = () => 'el' } = {}) {
   if (!element) return null;
-  const no = (why) => ({ key: `ui:${why}:${keyOf(element)}`, kind: 'ui', selectable: false });
-  if (dialogOpen) return no('dialog');
-  if (element.closest(TEXT)) return no('text');
-  if (element.closest(NEVER)) return no('never');
+  // blocked: something that must not be selected is right here, so the hands-free pull does not look around it
+  const no = (why, blocked) => ({ key: `ui:${why}:${keyOf(element)}`, kind: 'ui', selectable: false, ...(blocked && { blocked: true }) });
+  if (dialogOpen) return no('dialog', true);
+  if (element.closest(TEXT)) return no('text', true);
+  if (element.closest(NEVER)) return no('never', true);
   const target = element.closest(CLICKABLE); // the innermost clickable thing (a button inside a row is the button)
-  if (!target || target.disabled || target.getAttribute?.('aria-disabled') === 'true') return no('other');
-  return { key: `ui:${keyOf(target)}`, kind: 'ui', element: target, label: labelOf(target), selectable: true };
+  if (!target) return no('other');
+  if (target.disabled || target.getAttribute?.('aria-disabled') === 'true') return no('disabled', true);
+  // The hands-free layer (its bar, "Ajustes"): selected directly, never magnified (spec/004-hands-free-control.md)
+  const own = target.closest(HANDS_FREE);
+  const handsFree = own ? own.getAttribute(HANDS_FREE_ATTRIBUTE) : null;
+  return { key: `ui:${keyOf(target)}`, kind: 'ui', element: target, label: labelOf(target), selectable: true, direct: Boolean(own), handsFree };
 }
 
 // A clickable 3D object (MapViewModel.handlePick / GitViewModel.handlePick routes it)

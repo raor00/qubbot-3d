@@ -57,7 +57,7 @@
    (spec/003-hand-gestures.md) */
 .hand-row { display: flex; align-items: flex-start; gap: 4px; }
 .hand-row .hand-status { flex: 1; }
-#controls .hand-help-button { width: 22px; height: 22px; flex: none; border-radius: 999px; }
+#controls .hand-help-button { width: 24px; height: 24px; flex: none; border-radius: 999px; } /* WCAG 2.5.8 */
 #controls .hand-help-button svg { width: 14px; height: 14px; }
 .hand-help { padding: 2px 4px 4px; font-size: 11px; line-height: 1.4; color: var(--lg-muted); }
 .hand-help strong { display: block; margin-bottom: 2px; color: var(--lg-text); font-weight: 600; }
@@ -66,26 +66,26 @@
 .hand-slow:empty { display: none; }
 .hand-fps { padding: 0 4px 2px; font: 10.5px var(--mono); color: var(--lg-faint); }
 
-/* ---------- The hand cursor: a purple dot over the whole window, and the ring that fills while it holds
-   still on something selectable. It lets every click through. ---------- */
-#hand-cursor {
+/* ---------- The gesture cursor (hands, and the hands-free one in its own layer): a purple dot over the whole
+   window, and the ring that fills while it holds still on something selectable. It lets every click through. ---------- */
+.gesture-cursor {
   position: fixed; left: 0; top: 0; z-index: 2147483000; pointer-events: none;
   width: 0; height: 0; will-change: transform;
 }
-#hand-cursor[hidden] { display: none; }
-#hand-cursor .hand-dot {
+.gesture-cursor[hidden] { display: none; }
+.gesture-cursor .hand-dot {
   position: absolute; left: -6px; top: -6px; width: 12px; height: 12px; border-radius: 50%;
   background: var(--accent); box-shadow: 0 0 0 2px rgba(255, 255, 255, .85), 0 0 14px var(--accent);
 }
-#hand-cursor .hand-ring {
+.gesture-cursor .hand-ring {
   position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%; opacity: 0;
   background: conic-gradient(var(--accent) calc(var(--progress, 0) * 1turn), rgba(255, 255, 255, .18) 0);
   -webkit-mask: radial-gradient(circle, transparent 12px, #000 13px); mask: radial-gradient(circle, transparent 12px, #000 13px);
   transition: opacity .15s ease;
 }
-#hand-cursor.holding .hand-ring { opacity: 1; }
+.gesture-cursor.holding .hand-ring { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
-  #hand-cursor .hand-ring { transition: none; }
+  .gesture-cursor .hand-ring { transition: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

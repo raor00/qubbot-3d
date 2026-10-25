@@ -17,6 +17,7 @@ import { createRunService } from './services/runService.js';
 import { createSecurityService } from './services/securityService.js';
 import { openSession, openSimulatedSession } from './models/callSession.js';
 import { createProjectMemory, memoryText } from './models/projectMemoryModel.js';
+import { createFaceTrackingService } from './services/faceTrackingService.js';
 
 import { ProjectModel } from './models/projectModel.js';
 import { SetupModel } from './models/setupModel.js';
@@ -48,6 +49,8 @@ import { TourViewModel } from './viewmodels/tourViewModel.js';
 import { RobotViewModel } from './viewmodels/robotViewModel.js';
 import { BuildViewModel } from './viewmodels/buildViewModel.js';
 import { HandControlViewModel } from './viewmodels/handControlViewModel.js';
+import { HandsFreeViewModel } from './viewmodels/handsFreeViewModel.js';
+import { HandsFreeSettings } from './models/handsFreeSettings.js';
 import { EditorViewModel } from './viewmodels/editorViewModel.js';
 import { CallViewModel } from './viewmodels/callViewModel.js';
 import { TeamViewModel } from './viewmodels/teamViewModel.js';
@@ -71,6 +74,7 @@ import { createLabelLayer } from './views/ui/labelLayer.js';
 import { createControlsView } from './views/ui/controlsView.js';
 import { createHandControlView } from './views/ui/handControlView.js';
 import { createHandCursorView, createHandTargets } from './views/ui/handCursorView.js';
+import { createHandsFreeView } from './views/ui/handsFreeView.js';
 import { createPanelsView } from './views/ui/panelsView.js';
 import { createChatView } from './views/ui/chatView.js';
 import { createShellView } from './views/ui/shellView.js';
@@ -134,6 +138,13 @@ const tourViewModel = new TourViewModel({ projectModel, workspace, connection, m
 // below, once the 3D views and the input controller exist (spec/003-hand-gestures.md)
 const handActions = {};
 const handControlViewModel = new HandControlViewModel({ tracking: handTracking, camera: cameraViewModel, actions: handActions });
+// Using Platanus without hands, with the eyes or the head (spec/004-hands-free-control.md): same screen side
+const faceTracking = createFaceTrackingService();
+const handsFreeSettings = new HandsFreeSettings();
+const handsFreeActions = { stopHands: () => { if (handControlViewModel.on) handControlViewModel.stop(); } };
+const handsFreeViewModel = new HandsFreeViewModel({ tracking: faceTracking, settings: handsFreeSettings, actions: handsFreeActions });
+// One input at a time (B5): turning the hands on pauses the hands-free control (it comes back on next launch)
+handControlViewModel.store.subscribe(({ status }) => { if (status === 'starting' && handsFreeViewModel.on) handsFreeViewModel.stop(); });
 // The server list only refreshes while its side view is on screen
 shellViewModel.store.subscribe(({ side, sidebarOpen }) => serversViewModel.setVisible(sidebarOpen && side === 'servers'), { immediate: true });
 
@@ -462,15 +473,19 @@ createHandControlView({ handControlViewModel, video: handTracking.video, dev: wo
 // A confirmation dialog is open: the hand selects nothing meanwhile
 let dialogOpen = false;
 workspace.onDialog((open) => { dialogOpen = Boolean(open); });
-Object.assign(handActions, createHandTargets({
+const gestureTargets = createHandTargets({
   canvas: sceneView.canvas,
   pickAtScreen: input.pickAtScreen,
   zoomAt: input.zoomAt,
   handlePick: (pick) => (projectOpen() ? pickers[appViewModel.view]().handle(pick) : undefined),
   hover: (pick, x, y) => hoverCard.show(appViewModel.view === 'map' ? pick : null, x, y),
   dialogOpen: () => dialogOpen,
-}));
+});
+Object.assign(handActions, gestureTargets);
+Object.assign(handsFreeActions, gestureTargets);
 createHandCursorView({ handControlViewModel });
+createHandsFreeView({ handsFreeViewModel, settings: handsFreeSettings, video: faceTracking.video, dev: workspace.isDev });
+
 createPanelsView({ appViewModel, mapViewModel, supabaseViewModel, gitViewModel });
 // Which agent changes ask first (Manual / Auto / Sin preguntar)
 const approvalModel = new ApprovalModel(agentService);
@@ -556,6 +571,7 @@ projectModel.store.subscribe((state, previous) => {
   if (!state.open) { // closed: back to the start screen
     auditViewModel.close();
     handControlViewModel.stop(); // the camera goes off with the project
+    handsFreeViewModel.projectClosed(); // the hands-free control stays on, to pick another project (B34)
     gitModel.clear();
     bus.emit(EVENTS.projectClosed, { name: previous.name ?? strings.map.defaultProjectName });
     return;

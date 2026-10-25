@@ -14,6 +14,8 @@ Con la cámara encendida, la persona maneja el mapa 3D con las manos, sin tocar 
 2. Aparece una vista previa pequeña de la cámara, en espejo, que dice qué está haciendo la mano. El "?" muestra la lista de gestos.
 3. El mismo botón apaga la cámara; cerrar el proyecto también.
 
+La cámara es la misma que usa el [control sin manos](../hands-free/README.md), pero nunca a la vez: encender las manos apaga el control sin manos hasta el próximo inicio.
+
 | Gesto | Qué hace | La vista previa dice |
 |---|---|---|
 | Pellizco (pulgar e índice) y mover la mano | El mapa sigue a la mano | «Moviendo el mapa» |

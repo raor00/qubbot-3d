@@ -22,7 +22,12 @@ export const ICON_NAMES = {
   pin: 'PinIcon',
   arrowUp: 'ArrowUp02Icon',
   grip: 'DragDropVerticalIcon',
-  eye: 'ViewIcon',
+  eye: 'ViewIcon', // also the hands-free control (eyes or head)
+  // Hands-free bar and "Ajustes" (spec/004-hands-free-control.md)
+  settings: 'Settings01Icon',
+  target: 'Target02Icon', // recalibrate the gaze
+  focus: 'CenterFocusIcon', // correct the gaze / recenter the head
+  arrowLeft: 'ArrowLeft01Icon',
   // Servers panel and its ⋯ menu
   openExternal: 'LinkSquare02Icon',
   globe: 'Globe02Icon',

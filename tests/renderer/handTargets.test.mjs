@@ -71,3 +71,20 @@ test('3D picks become targets with a stable key and a short name (B15)', () => {
   assert.equal(pickTarget({ type: 'table', name: 'users' }).label, 'users');
   assert.equal(pickTarget(null), null);
 });
+
+// Hands-free (spec/004-hands-free-control.md): the bar and the "Ajustes" panel live in their own layer and
+// are selected directly (without the magnifier); what is blocked says so, so the pull never goes around it
+test('the hands-free buttons are direct and say which they are; blocked targets say they are blocked', () => {
+  const layer = el({ tag: 'div', attrs: { 'data-hands-free': 'layer' } });
+  const pause = el({ attrs: { 'data-hands-free': 'pause', 'aria-label': 'Pausa' }, parent: layer });
+  const t = uiTarget(pause);
+  assert.equal(t.selectable, true);
+  assert.equal(t.direct, true);
+  assert.equal(t.handsFree, 'pause');
+  const plain = uiTarget(el({ attrs: { 'aria-label': 'Riesgos' } }));
+  assert.equal(plain.direct, false);
+  assert.equal(plain.handsFree, null);
+  assert.equal(uiTarget(el({ attrs: { 'data-gesture': 'never' } })).blocked, true);
+  assert.equal(uiTarget(el(), { dialogOpen: true }).blocked, true);
+  assert.equal(uiTarget(el({ tag: 'p' })).blocked, undefined, 'plain text is not blocked: the pull may look around it');
+});

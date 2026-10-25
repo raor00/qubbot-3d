@@ -14,6 +14,8 @@
   --warn: #ffc24a;
   --danger: #ff5a6a;
   --danger-soft: rgba(255, 90, 106, 0.12);
+  --hf-dim: rgba(8, 8, 10, 0.62);   /* hands-free: around the magnifier */
+  --hf-veil: rgba(8, 8, 10, 0.86);  /* hands-free: behind a calibration */
   --radius: 12px;
   --blur: blur(14px) saturate(140%);
   --sans: system-ui, -apple-system, "Segoe UI", "Inter", sans-serif;
@@ -187,8 +189,8 @@ body::after {
 .crumbs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font: 600 13px var(--mono); }
 .crumbs strong { color: var(--text); }
 #breadcrumb .crumbs button {
-  padding: 2px 4px; border: 0; border-radius: 5px; background: transparent; color: var(--muted);
-  font: inherit; cursor: pointer;
+  min-height: 24px; min-width: 24px; padding: 2px 6px; border: 0; border-radius: 5px; background: transparent; color: var(--muted);
+  font: inherit; cursor: pointer; /* at least 24 × 24 px (WCAG 2.5.8, spec/004 B35) */
 }
 #breadcrumb .crumbs button:hover { color: var(--accent); background: var(--accent-soft); }
 .crumbs .sep { color: var(--faint); }

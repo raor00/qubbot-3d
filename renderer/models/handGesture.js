@@ -201,11 +201,24 @@ const DWELL_TOLERANCE = 0.02; // window units the cursor may drift while holding
 // Selecting by holding still: the same target under a still cursor for 800 ms fires once. Moving away,
 // another target or none restarts it; after firing, it waits until the cursor leaves that target.
 // key: a stable id of what is under the cursor (null = nothing selectable); now: ms.
+// ms and tolerance can change (the hands-free settings, spec/004-hands-free-control.md B26).
 export class DwellTimer {
   #key = null;
   #since = 0;
   #anchor = null;
   #fired = false;
+  #ms;
+  #tolerance;
+
+  constructor({ ms = DWELL_MS, tolerance = DWELL_TOLERANCE } = {}) {
+    this.#ms = ms;
+    this.#tolerance = tolerance;
+  }
+
+  configure({ ms, tolerance } = {}) {
+    if (Number.isFinite(ms)) this.#ms = ms;
+    if (Number.isFinite(tolerance)) this.#tolerance = tolerance;
+  }
 
   update(key, point, now) {
     if (!key) { this.reset(); return { progress: 0, fire: false }; }
@@ -214,12 +227,12 @@ export class DwellTimer {
       this.#since = now;
       this.#anchor = point;
       this.#fired = false;
-    } else if (Math.hypot(point.x - this.#anchor.x, point.y - this.#anchor.y) > DWELL_TOLERANCE) {
+    } else if (Math.hypot(point.x - this.#anchor.x, point.y - this.#anchor.y) > this.#tolerance) {
       this.#since = now;
       this.#anchor = point;
     }
     if (this.#fired) return { progress: 0, fire: false };
-    const progress = Math.min(1, (now - this.#since) / DWELL_MS);
+    const progress = Math.min(1, (now - this.#since) / this.#ms);
     if (progress < 1) return { progress, fire: false };
     this.#fired = true;
     return { progress: 1, fire: true };

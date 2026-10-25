@@ -12,6 +12,7 @@
     "dev": "electron . --dev",
     "watch": "electron . --watch",
     "icons": "node scripts/build-icons.mjs",
+    "models": "node scripts/fetch-face-model.js",
     "build:web": "node scripts/build-web.js",
     "dist:mac": "electron-builder --mac --publish never",
     "dist:win": "electron-builder --win --publish never",

@@ -2,6 +2,11 @@
 // hand is doing (or why the camera could not start), a "?" with the gestures and, in dev, the frame rate.
 import { strings } from '../../i18n/es.js';
 
+// The camera card is shared with the hands-free control (views/ui/handsFreeView.js): it shows while either is on
+export function syncPreview(preview) {
+  preview.hidden = preview.dataset.hands !== 'on' && preview.dataset.handsFree !== 'on';
+}
+
 // dev: show frames per second and GPU / CPU (npm run dev)
 export function createHandControlView({ handControlViewModel: vm, video, dev = false }) {
   const button = document.getElementById('hand-control');
@@ -42,7 +47,8 @@ export function createHandControlView({ handControlViewModel: vm, video, dev = f
   vm.store.subscribe((state) => {
     const { status: s, hand, pinching, gesture, twoHands } = state;
     button.setAttribute('aria-pressed', String(s === 'on' || s === 'starting'));
-    preview.hidden = s === 'off';
+    preview.dataset.hands = s === 'off' ? 'off' : 'on';
+    syncPreview(preview);
     preview.classList.toggle('error', s === 'error');
     preview.classList.toggle('hand', hand);
     preview.classList.toggle('pinching', pinching || Boolean(gesture?.startsWith('zoom')));
