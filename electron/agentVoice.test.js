@@ -74,3 +74,12 @@ test('tour: narrates the analyzer facts as JSON only, in the voice of the mode, 
   assert.ok(composeTourPrompt(voice, { mode: 'dev' }).includes(voice.config.tour.modes.dev));
   assert.ok(!vibe.includes(voice.config.base[0]), 'not the chat rules');
 });
+
+test('the base teaches the Arduino lab: every lab tool is named, and the checker has the last word', () => {
+  const prompt = composePrompt(voice, { mode: 'vibe' });
+  for (const tool of require('./mcpServer').TOOLS.map((t) => t.name).filter((n) => n.startsWith('platanus_lab_'))) assert.ok(prompt.includes(tool), tool);
+  assert.match(prompt, /Arduino/);
+  assert.match(prompt, /nunca tú/);
+  // a repair's own task replaces the base: the lab lines do not leak into it
+  assert.ok(!composePrompt(voice, { mode: 'vibe', task: 'Repara a.js' }).includes('platanus_lab_view'));
+});

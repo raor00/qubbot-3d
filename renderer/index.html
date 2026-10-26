@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="styles/titlebar.css" />
   <link rel="stylesheet" href="styles/call.css" />
   <link rel="stylesheet" href="styles/services.css" />
+  <link rel="stylesheet" href="styles/lab.css" />
   <script type="importmap">
     { "imports": { "three": "../node_modules/three/build/three.module.js", "three/addons/": "../node_modules/three/examples/jsm/", "thinking-orbs/engine": "./vendor/thinking-orbs/engine.es.js", "@mediapipe/tasks-vision": "../node_modules/@mediapipe/tasks-vision/vision_bundle.mjs" } }
   </script>
@@ -65,6 +66,7 @@
     <main id="stage" class="card">
   <!-- Side dock (left edge of the map): the side panels, which open next to it -->
   <div id="side-dock" class="icon-bar side-dock" role="toolbar" aria-orientation="vertical">
+    <button type="button" draggable="true" data-side="catalog" data-gesture="safe"><i data-icon="chip"></i></button>
     <button type="button" draggable="true" data-side="explorer" data-gesture="safe"><i data-icon="folder"></i></button>
     <button type="button" draggable="true" data-side="risks" data-gesture="safe"><i data-icon="alert"></i></button>
     <button type="button" draggable="true" data-side="repairs" data-gesture="safe"><i data-icon="wrench"></i><em class="rail-badge" id="rail-repairs-badge" hidden></em></button>
@@ -73,10 +75,12 @@
   </div>
   <!-- Floating view switcher: map | git (drag the icons to reorder them; the order is remembered) -->
   <div id="stage-tabs" class="stage-tabs icon-bar" role="toolbar">
+    <button type="button" draggable="true" role="tab" data-stage="lab" data-gesture="safe"><i data-icon="bench"></i><span data-i18n="stageTabs.lab"></span><em class="tab-badge"></em><span class="tip"></span></button>
     <button type="button" draggable="true" role="tab" data-stage="map" data-gesture="safe"><i data-icon="home"></i><span data-i18n="stageTabs.map"></span><em class="tab-badge"></em><span class="tip"></span></button>
     <button type="button" draggable="true" role="tab" data-stage="git" data-gesture="safe"><i data-icon="gitBranch"></i><span data-i18n="stageTabs.git"></span><em class="tab-badge"></em><span class="tip"></span></button>
   </div>
   <div id="hover-card" class="hover-card" hidden></div>
+  <div id="lab-toolbar" class="lab-toolbar" hidden></div>
   <div id="qubi-layer" class="qubi-layer"></div>
   <!-- Call with Qubi (views/ui/callBarView.js), only during a call: a panel above Qubi's head that follows him;
        at the bottom center of the map when he is not on screen -->

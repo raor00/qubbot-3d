@@ -4,6 +4,15 @@
 export const ICON_NAMES = {
   search: 'Search01Icon',
   folder: 'Folder01Icon',
+  // The Arduino lab: catalog, bench tab, enclosure, code, simulation
+  chip: 'CpuIcon',
+  bench: 'CircuitBoardIcon',
+  cube: 'CubeIcon',
+  code: 'CodeIcon',
+  flash: 'FlashIcon',
+  rotate: 'Rotate01Icon',
+  trash: 'Delete02Icon',
+  download: 'Download01Icon',
   alert: 'Alert02Icon',
   wrench: 'Wrench01Icon',
   server: 'ServerStack01Icon',

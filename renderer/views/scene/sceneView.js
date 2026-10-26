@@ -40,7 +40,7 @@ export function createSceneView(cameraViewModel, container = document.body) {
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -400, 400);
 
   // One layer per app view; only the active one is visible. Ground, grid and lights are shared.
-  const layers = { map: new THREE.Group(), git: new THREE.Group() };
+  const layers = { map: new THREE.Group(), git: new THREE.Group(), lab: new THREE.Group() };
   Object.values(layers).forEach((layer) => scene.add(layer));
   const setActiveLayer = (name) => Object.entries(layers).forEach(([key, layer]) => { layer.visible = key === name; });
   setActiveLayer('map');

@@ -144,6 +144,14 @@ contextBridge.exposeInMainWorld('platanus', {
     learn: (root, facts) => ipcRenderer.invoke('memory:learn', root, facts), // [string]
     forget: (root) => ipcRenderer.invoke('memory:forget', root),
   },
+  // Arduino lab (electron/lab.js): the bench's design file and its exports; the window never sees a path
+  // load -> { ok, data: text | null }; save(text) -> { ok, data: { dropped } | error }; export(kind: 'stl' (base64) |
+  // 'scad' | 'ino', content) -> { ok, data: { file } }
+  lab: {
+    load: () => ipcRenderer.invoke('lab:load'),
+    save: (text) => ipcRenderer.invoke('lab:save', text),
+    export: (kind, content) => ipcRenderer.invoke('lab:export', kind, content),
+  },
   onMenuAction: on('menu:action'), // ({ action: 'newProject'|'openProject'|'openRecent'|'closeProject', root? }) => ...
   onChanged: on('fs:changed'), // (paths) => ...
   onDialog: on('dialog:state'), // (open) => ... a confirmation dialog of the main process is open

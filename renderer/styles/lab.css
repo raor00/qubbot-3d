@@ -1,0 +1,192 @@
+/* The Arduino lab's UI: the catalog panel (views/ui/catalogView.js), the bench toolbar (labToolbarView.js) and
+   the drop ghost (labDropView.js). Dark liquid glass on the chat's tokens (--lg-* from chat-glass.css).
+   Neutral like the chat: only problems (red, amber) and what is alive (the simulation's dot) take color.
+   Everything is scoped to #lab-toolbar, .lab-catalog, .lab-card, .lab-drop-*. */
+
+/* ---------- Catalog (side panel body) ---------- */
+.lab-catalog { display: flex; flex-direction: column; gap: 10px; padding: 12px 10px 16px; color: var(--lg-text); font: 13px/1.45 var(--lg-font); }
+.lab-catalog.no-project > :not(.lab-catalog-empty) { display: none; }
+.lab-catalog:not(.no-project) > .lab-catalog-empty { display: none; }
+.lab-catalog-empty { margin: 24px 8px; text-align: center; color: var(--lg-muted); }
+.lab-catalog-intro, .lab-catalog-none { margin: 0 4px; color: var(--lg-muted); font-size: 12px; }
+.lab-catalog-none { padding: 14px 0; text-align: center; }
+
+.lab-search {
+  display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 999px; cursor: text;
+  background: var(--lg-chip); box-shadow: var(--lg-rim);
+  transition: background .2s var(--lg-ease), box-shadow .2s var(--lg-ease);
+}
+.lab-search:focus-within { background: var(--lg-chip-hover); box-shadow: var(--lg-rim), 0 0 0 1px rgba(255, 255, 255, .28); }
+.lab-search-icon { display: grid; place-items: center; flex: none; color: var(--lg-icon-muted); }
+.lab-search input {
+  flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; border-radius: 0; outline: 0; background: transparent;
+  color: var(--lg-text); font: 12.5px var(--lg-font); -webkit-appearance: none; appearance: none;
+}
+.lab-search input::placeholder { color: var(--lg-faint); }
+.lab-search input::-webkit-search-cancel-button { filter: invert(1); opacity: .55; cursor: pointer; }
+
+.lab-catalog-list { display: flex; flex-direction: column; gap: 14px; }
+.lab-section-title {
+  display: flex; align-items: center; gap: 8px; margin: 0 4px 6px; font: 600 11px/1.2 var(--lg-font);
+  letter-spacing: .06em; text-transform: uppercase; color: var(--lg-muted);
+}
+.lab-section-title em { font-style: normal; padding: 1px 7px; border-radius: 999px; background: var(--lg-chip); color: var(--lg-faint); letter-spacing: 0; }
+.lab-cards { display: flex; flex-direction: column; gap: 6px; }
+
+/* A card: tile with the category icon tinted by the part's own color, name, one line, chips */
+.lab-card {
+  --part: #8b83ff;
+  position: relative; display: flex; align-items: flex-start; gap: 11px; width: 100%; padding: 10px 11px; box-sizing: border-box;
+  border: 0; border-radius: var(--lg-r-block); background: var(--lg-card); box-shadow: var(--lg-rim);
+  color: inherit; font: inherit; text-align: left; cursor: grab;
+  transition: transform .22s var(--lg-ease), background .2s var(--lg-ease), box-shadow .2s var(--lg-ease);
+}
+.lab-card:hover { transform: translateY(-2px); background: var(--lg-chip); box-shadow: var(--lg-rim), 0 8px 20px rgba(0, 0, 0, .3); }
+.lab-card:active { cursor: grabbing; transform: translateY(0) scale(.985); background: var(--lg-chip-press); }
+.lab-card:focus-visible { outline: 2px solid rgba(255, 255, 255, .6); outline-offset: 2px; }
+.lab-card.dragging { opacity: .45; transform: none; }
+.lab-card-icon {
+  display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 11px;
+  background: color-mix(in srgb, var(--part) 30%, rgba(255, 255, 255, .04));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 -3px 0 var(--part);
+  color: var(--lg-text);
+}
+.lab-card-icon svg { width: 20px; height: 20px; }
+.lab-card-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.lab-card-name { display: flex; align-items: center; gap: 7px; font: 600 13px/1.25 var(--lg-font); letter-spacing: -.01em; color: var(--lg-text); }
+.lab-swatch { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--part); box-shadow: 0 0 0 1px rgba(255, 255, 255, .3); }
+.lab-card-desc { color: var(--lg-muted); font-size: 12px; line-height: 1.35; }
+.lab-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.lab-chip { padding: 1px 7px; border-radius: 999px; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); color: var(--lg-text-2); font: 11px/1.5 var(--lg-mono); }
+
+/* ---------- Circuit review ---------- */
+.lab-review { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding: 12px; border-radius: var(--lg-r-block); background: var(--lg-stage); box-shadow: inset 0 0 0 1px var(--lg-line); }
+.lab-review:empty { display: none; }
+.lab-review-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.lab-review-title { margin: 0; font: 600 13px/1.2 var(--lg-font); letter-spacing: -.01em; color: var(--lg-text); }
+.lab-review-count { color: var(--warn); font-size: 11.5px; }
+.lab-review-count.red { color: var(--danger); }
+.lab-review-ok { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--lg-text-2); font-size: 12.5px; }
+.lab-issues { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.lab-issue {
+  display: flex; align-items: flex-start; gap: 9px; width: 100%; padding: 7px 8px; box-sizing: border-box; border: 0; border-radius: 10px;
+  background: transparent; color: var(--lg-text-2); font: 12.5px/1.4 var(--lg-font); text-align: left; cursor: pointer;
+  transition: background .18s var(--lg-ease);
+}
+.lab-issue:hover:not(:disabled) { background: var(--lg-chip); }
+.lab-issue:disabled { cursor: default; }
+.lab-issue:focus-visible { outline: 2px solid rgba(255, 255, 255, .55); outline-offset: 1px; }
+.lab-dot { flex: none; width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--lg-faint); }
+.lab-dot.red { background: var(--danger); box-shadow: 0 0 8px rgba(255, 90, 106, .7); }
+.lab-dot.yellow { background: var(--warn); box-shadow: 0 0 7px rgba(255, 194, 74, .5); }
+.lab-dot.green { background: #6fdc9a; box-shadow: none; margin-top: 0; }
+.lab-fix {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 34px; margin-top: 2px; padding: 0 14px; border: 0; border-radius: 999px;
+  background: rgba(255, 255, 255, .92); color: #121212; font: 600 12.5px var(--lg-font); cursor: pointer;
+  transition: transform .2s var(--lg-ease), background .2s var(--lg-ease);
+}
+.lab-fix:hover { background: #fff; transform: translateY(-1px); }
+.lab-fix:active { transform: scale(.97); }
+.lab-fix:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.lab-fix svg { stroke: currentColor; }
+
+/* ---------- Bench toolbar: floats at the bottom center of the stage ---------- */
+#lab-toolbar {
+  position: absolute; z-index: 6; left: 50%; bottom: 14px; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: calc(100% - 28px);
+  pointer-events: none; font: 13px/1.4 var(--lg-font); color: var(--lg-text); -webkit-font-smoothing: antialiased;
+}
+#lab-toolbar[hidden] { display: none; }
+/* The floating chat covers the stage's right side and the map's controls the left: centre in the free strip */
+body:not(.chat-closed):not(.chat-min):not(.chat-docked) #lab-toolbar {
+  left: calc(290px + (100% - 290px - var(--chat-w, 372px) - 24px) / 2);
+  max-width: calc(100% - 290px - var(--chat-w, 372px) - 36px);
+}
+@media (max-width: 1240px) {
+  body:not(.chat-closed):not(.chat-min):not(.chat-docked) #lab-toolbar { left: 14px; bottom: 66px; transform: none; max-width: calc(100% - var(--chat-w, 372px) - 36px); align-items: flex-start; }
+}
+
+#lab-toolbar .lab-pill {
+  position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; padding: 5px; border-radius: 999px; pointer-events: auto;
+  background: var(--lg-panel);
+  -webkit-backdrop-filter: url(#liquid-glass) blur(22px) saturate(175%) brightness(1.04);
+  backdrop-filter: url(#liquid-glass) blur(22px) saturate(175%) brightness(1.04);
+  box-shadow: var(--lg-rim-strong), var(--lg-shadow);
+  animation: lab-rise .38s var(--lg-ease);
+}
+#lab-toolbar .lab-pill::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(150deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, .07) 28%, rgba(255, 255, 255, .02) 55%, rgba(255, 255, 255, .1));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+#lab-toolbar .lab-btn {
+  display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px 0 11px; border: 0; border-radius: 999px; background: transparent;
+  color: var(--lg-icon); font: 500 12.5px var(--lg-font); white-space: nowrap; cursor: pointer;
+  transition: background .2s var(--lg-ease), color .2s var(--lg-ease), transform .2s var(--lg-ease);
+}
+#lab-toolbar .lab-btn-icon { display: grid; place-items: center; }
+#lab-toolbar .lab-btn svg { stroke: currentColor; }
+#lab-toolbar .lab-btn:hover { background: var(--lg-chip-hover); color: var(--lg-text); }
+#lab-toolbar .lab-btn:active { background: var(--lg-chip-press); transform: scale(.96); }
+#lab-toolbar .lab-btn:focus-visible { outline: 2px solid rgba(255, 255, 255, .6); outline-offset: 1px; }
+#lab-toolbar .lab-btn.on, #lab-toolbar .lab-btn[aria-expanded="true"] { background: var(--lg-chip-hover); box-shadow: var(--lg-rim); color: var(--lg-text); }
+/* Simulate: the white pill of the chat; while it runs it shows a living dot */
+#lab-toolbar .lab-btn.primary { background: rgba(255, 255, 255, .92); color: #121212; font-weight: 600; }
+#lab-toolbar .lab-btn.primary:hover { background: #fff; color: #121212; }
+#lab-toolbar .lab-btn.primary:active { background: #e8e8e8; }
+#lab-toolbar .lab-btn.primary:focus-visible { outline-color: #fff; outline-offset: 2px; }
+#lab-toolbar .lab-pulse { position: relative; flex: none; width: 8px; height: 8px; margin-right: -1px; border-radius: 50%; background: #1fae5f; }
+#lab-toolbar .lab-pulse::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid #1fae5f; animation: lab-pulse 1.4s ease-out infinite; }
+/* Destructive: calm until hovered, then red. The hand cursor never triggers it (data-gesture="never") */
+#lab-toolbar .lab-btn.danger { color: var(--lg-icon-muted); }
+#lab-toolbar .lab-btn.danger:hover { background: var(--danger-soft); color: var(--danger); }
+#lab-toolbar .lab-sep { align-self: stretch; width: 1px; margin: 7px 4px; background: var(--lg-line); }
+#lab-toolbar .lab-sel-name { max-width: 150px; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--lg-text); font: 600 12.5px var(--lg-font); }
+
+/* Hint while a wire is drawn, and the 3 s notice: small glass chips above the pill */
+#lab-toolbar .lab-hint, #lab-toolbar .lab-toast {
+  position: relative; margin: 0; padding: 7px 14px; border-radius: 999px; max-width: 100%; box-sizing: border-box; text-align: center;
+  background: rgba(18, 18, 18, .82); box-shadow: var(--lg-rim-strong), var(--lg-shadow); font-size: 12.5px; color: var(--lg-text);
+  -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
+}
+#lab-toolbar .lab-hint[hidden] { display: none; }
+#lab-toolbar .lab-hint { animation: lab-rise .28s var(--lg-ease); }
+#lab-toolbar .lab-toast { display: none; }
+#lab-toolbar .lab-toast.on { display: block; animation: lab-rise .28s var(--lg-ease); }
+#lab-toolbar .lab-toast[data-kind="warn"] { box-shadow: var(--lg-rim-strong), var(--lg-shadow), 0 0 0 1px rgba(255, 194, 74, .55); }
+#lab-toolbar .lab-toast[data-kind="error"] { box-shadow: var(--lg-rim-strong), var(--lg-shadow), 0 0 0 1px rgba(255, 90, 106, .65); }
+
+@media (max-width: 1100px) {
+  #lab-toolbar .lab-btn:not(.primary) .lab-btn-label { display: none; }
+  #lab-toolbar .lab-btn:not(.primary) { padding: 0 11px; }
+  #lab-toolbar .lab-sel-name { max-width: 90px; }
+}
+
+/* The enclosure menu is a .floating-menu (shell.css); only its stacking is set here */
+#lab-enclosure-menu { z-index: 60; }
+
+/* ---------- Drop ghost: where the dragged part will land ---------- */
+.lab-drop-ghost { position: fixed; inset: 0; z-index: 50; width: 100vw; height: 100vh; pointer-events: none; opacity: 0; transition: opacity .12s var(--lg-ease); }
+.lab-drop-ghost.on { opacity: 1; }
+.lab-drop-shape { fill: rgba(255, 255, 255, .08); stroke: rgba(255, 255, 255, .85); stroke-width: 1.5; stroke-dasharray: 6 5; stroke-linejoin: round; animation: lab-march .9s linear infinite; }
+.lab-drop-dot { fill: #fff; }
+.lab-drop-tag {
+  position: fixed; left: 0; top: 0; z-index: 51; padding: 5px 11px; border-radius: 999px; pointer-events: none; white-space: nowrap; opacity: 0;
+  background: rgba(18, 18, 18, .88); box-shadow: var(--lg-rim-strong), var(--lg-shadow); color: var(--lg-text); font: 500 12px var(--lg-font);
+  transition: opacity .12s var(--lg-ease);
+}
+.lab-drop-tag.on { opacity: 1; }
+
+@keyframes lab-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes lab-pulse { from { opacity: .8; transform: scale(.6); } to { opacity: 0; transform: scale(1.5); } }
+@keyframes lab-march { to { stroke-dashoffset: -22; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-card, .lab-search, .lab-issue, .lab-fix, #lab-toolbar .lab-btn { transition: none; }
+  .lab-card:hover, .lab-card:active, .lab-fix:hover, .lab-fix:active, #lab-toolbar .lab-btn:active { transform: none; }
+  #lab-toolbar .lab-pill, #lab-toolbar .lab-hint, #lab-toolbar .lab-toast.on { animation: none; }
+  #lab-toolbar .lab-pulse::after { animation: none; opacity: .5; transform: scale(1.2); }
+  .lab-drop-shape { animation: none; }
+  .lab-drop-ghost, .lab-drop-tag { transition: none; }
+}

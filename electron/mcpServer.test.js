@@ -3,6 +3,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createMcpHandler, startMcpServer, isBlockedPath, isBlockedRealPath, isInScope, TOOLS } = require('./mcpServer');
+const lab = require('./lab');
+
+const LAB_WRITE = lab.LAB_WRITE_TOOLS.map((n) => `platanus_${n}`);
 
 const calls = [];
 const handlers = {
@@ -12,6 +15,12 @@ const handlers = {
   platanus_write_file: async ({ path }) => `wrote ${path}`,
   platanus_set_file_score: async ({ path, level }) => `${path} -> ${level}`,
   platanus_show_folder: async ({ path }) => `showing ${path || 'map'}`,
+  platanus_lab_catalog: async () => 'catalog',
+  platanus_lab_view: async () => 'bench',
+  platanus_lab_add_part: async ({ type }) => `added ${type}`,
+  platanus_lab_connect: async ({ from, to }) => `${from} -> ${to}`,
+  platanus_lab_auto_wire: async () => 'wired',
+  platanus_lab_remove: async () => 'removed',
 };
 const respond = createMcpHandler({ handlers, onCall: (c) => calls.push(c) });
 
@@ -110,8 +119,8 @@ test('read-only (the tour): only the reading tools are listed and nothing can be
   const seen = [];
   const ro = createMcpHandler({ handlers, readOnly: true, onCall: (c) => seen.push(c) });
   const list = await ro({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
-  assert.deepEqual(list.result.tools.map((t) => t.name), ['platanus_get_project', 'platanus_list_risks', 'platanus_read_file']);
-  for (const name of ['platanus_write_file', 'platanus_set_file_score', 'platanus_show_folder']) {
+  assert.deepEqual(list.result.tools.map((t) => t.name), ['platanus_get_project', 'platanus_list_risks', 'platanus_read_file', 'platanus_lab_catalog', 'platanus_lab_view']);
+  for (const name of ['platanus_write_file', 'platanus_set_file_score', 'platanus_show_folder', ...LAB_WRITE]) {
     const r = await ro({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name, arguments: { path: 'a.js', content: 'x', reason: 'r', level: 'red' } } });
     assert.equal(r.result.isError, true, name);
     assert.match(r.result.content[0].text, /read-only/);
@@ -128,7 +137,7 @@ test('HTTP: the read-only address needs the same private key', async () => {
   const list = (path) => fetch(`http://127.0.0.1:${port}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) });
   try {
     const ro = await (await list(`/mcp/${token}/ro`)).json();
-    assert.equal(ro.result.tools.length, 3);
+    assert.equal(ro.result.tools.length, 5);
     const full = await (await list(`/mcp/${token}`)).json();
     assert.equal(full.result.tools.length, TOOLS.length);
     assert.equal((await list(`/mcp/${'d'.repeat(48)}/ro`)).status, 404);
@@ -304,4 +313,37 @@ test('commands and deletions: offered to the agent, refused to a worker and to t
   const ro = createMcpHandler({ handlers, readOnly: true });
   const r = await ro({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'platanus_run_command', arguments: { command: 'npm i', reason: 'x' } } });
   assert.equal(r.result.isError, true);
+});
+
+test('lab tools: the six are declared, the read ones are on the read-only address, a worker cannot change the bench', async () => {
+  assert.deepEqual(TOOLS.filter((t) => t.name.startsWith('platanus_lab_')).map((t) => t.name), lab.LAB_TOOLS.map((n) => `platanus_${n}`));
+  const call = (h, name, args = {}) => h({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } });
+  const full = createMcpHandler({ handlers });
+  assert.equal((await call(full, 'platanus_lab_add_part', { type: 'led' })).result.content[0].text, 'added led');
+  assert.equal((await call(full, 'platanus_lab_connect', { from: 'led-1.SIG', to: 'arduino-uno-1.D2' })).result.content[0].text, 'led-1.SIG -> arduino-uno-1.D2');
+  assert.equal((await call(full, 'platanus_lab_view')).result.isError, false);
+  // required arguments are checked before the handler
+  assert.equal((await call(full, 'platanus_lab_add_part', {})).result.isError, true);
+  assert.equal((await call(full, 'platanus_lab_connect', { from: 'a.b' })).result.isError, true);
+  // the read-only address: reading works, changing is refused
+  const seen = [];
+  const ro = createMcpHandler({ handlers, readOnly: true, onCall: (c) => seen.push(c) });
+  assert.equal((await call(ro, 'platanus_lab_catalog')).result.isError, false);
+  assert.equal((await call(ro, 'platanus_lab_view')).result.isError, false);
+  for (const name of LAB_WRITE) {
+    const r = await call(ro, name, { type: 'led', from: 'a.b', to: 'c.d' });
+    assert.equal(r.result.isError, true, name);
+    assert.match(r.result.content[0].text, /read-only/);
+  }
+  // a worker of the team reads the bench but never changes it
+  const worker = createMcpHandler({ handlers, scope: { folders: ['web'] }, context: { worker: 'w1-abcd' }, onCall: (c) => seen.push(c) });
+  const names = (await worker({ jsonrpc: '2.0', id: 2, method: 'tools/list' })).result.tools.map((t) => t.name);
+  assert.ok(names.includes('platanus_lab_view') && names.includes('platanus_lab_catalog'));
+  for (const name of LAB_WRITE) {
+    assert.ok(!names.includes(name), name);
+    const r = await call(worker, name, { type: 'led', from: 'a.b', to: 'c.d' });
+    assert.equal(r.result.isError, true, name);
+    assert.match(r.result.content[0].text, /lab bench/);
+  }
+  assert.equal((await call(worker, 'platanus_lab_view')).result.isError, false);
 });

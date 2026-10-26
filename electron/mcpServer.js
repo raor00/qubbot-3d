@@ -6,6 +6,7 @@ const http = require('node:http');
 const path = require('node:path');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
+const lab = require('./lab');
 
 const PROTOCOL_VERSION = '2025-06-18';
 const MAX_BODY = 256 * 1024;
@@ -158,6 +159,63 @@ const TOOLS = [
       additionalProperties: false,
     },
   },
+  {
+    name: 'platanus_lab_catalog',
+    description: "Lists the parts of the Arduino lab's catalog (id, name, type, voltage, consumption and pin names). Read it before adding parts to the bench.",
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'platanus_lab_view',
+    description: "Shows the lab's bench: every part with its id, its wires, and the checker's findings in plain Spanish (red = danger, yellow = to review).",
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'platanus_lab_add_part',
+    description: "Puts a part of the catalog on the lab's bench (saved in laboratorio/circuito.json; the user approves it like any write). `near` is the id of a part to place it beside. Returns the new part's id.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', description: 'Catalog id, e.g. "hc-sr04" or "arduino-uno"' },
+        near: { type: 'string', description: 'Id of a part already on the bench, e.g. "arduino-uno-1"' },
+      },
+      required: ['type'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'platanus_lab_connect',
+    description: "Wires two pins on the lab's bench, written as part.pin (e.g. from \"hc-sr04-1.TRIG\" to \"arduino-uno-1.D2\"). The fixed checker decides: a wire that would make the circuit red (short, wrong voltage) is refused. Saved like a write the user approves.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        from: { type: 'string', description: 'part.pin' },
+        to: { type: 'string', description: 'part.pin' },
+      },
+      required: ['from', 'to'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'platanus_lab_auto_wire',
+    description: "Wires a part (or every part, when `part` is left out) to the board with the right pins: power, ground and one free signal pin each. Saved like a write the user approves.",
+    inputSchema: {
+      type: 'object',
+      properties: { part: { type: 'string', description: 'Id of the part to wire; omit for all' } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'platanus_lab_remove',
+    description: "Removes a part (with its wires) or a single wire from the lab's bench. Give `part` or `wire`, not both. Saved like a write the user approves.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        part: { type: 'string', description: 'Id of the part to remove' },
+        wire: { type: 'string', description: 'Id of the wire to remove, e.g. "w3"' },
+      },
+      additionalProperties: false,
+    },
+  },
 ];
 
 const text = (value, isError = false) => ({
@@ -166,7 +224,7 @@ const text = (value, isError = false) => ({
 });
 
 // Tools a read-only run may use (the tour of a project: it explains, it never changes anything)
-const READ_ONLY_TOOLS = ['platanus_get_project', 'platanus_list_risks', 'platanus_read_file'];
+const READ_ONLY_TOOLS = ['platanus_get_project', 'platanus_list_risks', 'platanus_read_file', 'platanus_lab_catalog', 'platanus_lab_view'];
 
 // `handlers` implement the tools (they live in main.js, next to the workspace and the window); each one
 // is called as handler(args, context), and context.worker says which of Qubi's workers asked.
@@ -175,7 +233,9 @@ const READ_ONLY_TOOLS = ['platanus_get_project', 'platanus_list_risks', 'platanu
 // scope ({ folders, root? }): platanus_write_file only inside those folders (a worker's address).
 // A worker never sets the traffic light: Qubi's audit judges its files, and an override it set (green on
 // its own risky file, or on someone else's) would hide what the fixed checks found.
-const WORKER_REFUSED = ['platanus_set_file_score', 'platanus_run_command'];
+// The lab's bench is the person's (and the chat agent's): a worker does not change it either.
+const LAB_WRITE_TOOLS = lab.LAB_WRITE_TOOLS.map((n) => `platanus_${n}`);
+const WORKER_REFUSED = ['platanus_set_file_score', 'platanus_run_command', ...LAB_WRITE_TOOLS];
 function createMcpHandler({ handlers, onCall: report = () => {}, readOnly = false, scope = null, context: given = {} }) {
   const tools = readOnly ? TOOLS.filter((t) => READ_ONLY_TOOLS.includes(t.name))
     : scope ? TOOLS.filter((t) => !WORKER_REFUSED.includes(t.name)) : TOOLS;
@@ -188,7 +248,9 @@ function createMcpHandler({ handlers, onCall: report = () => {}, readOnly = fals
       onCall({ tool: name, args, ok: false, error: 'worker' });
       return text(name === 'platanus_run_command'
         ? 'Refused: a worker of the team does not run commands. Write your files; Qubi runs what is needed when the team finishes.'
-        : 'Refused: a worker does not set the traffic light. Qubi audits your files when you finish.', true);
+        : LAB_WRITE_TOOLS.includes(name)
+          ? 'Refused: a worker does not change the lab bench. Write your files; the chat agent builds the circuit.'
+          : 'Refused: a worker does not set the traffic light. Qubi audits your files when you finish.', true);
     }
     if (!tools.includes(tool)) {
       onCall({ tool: name, args, ok: false, error: 'read-only' });

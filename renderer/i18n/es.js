@@ -1,11 +1,13 @@
 // Every user-facing text lives here (Spanish). Code, comments and identifiers stay in English.
 // To translate the UI, copy this file (e.g. en.js) and change the import in the modules that use it.
 import { plural } from '../core/format.js';
+import { lab } from './lab.es.js';
 
 const files = (n) => plural(n, 'archivo', 'archivos');
 const folders = (n) => plural(n, 'carpeta', 'carpetas');
 
 export const strings = {
+  lab, // the Arduino lab: catalog, bench, checker, simulation, enclosure (lab.es.js)
   controls: {
     zoomIn: 'Acercar',
     zoomOut: 'Alejar',
@@ -1193,9 +1195,11 @@ export const strings = {
       openRecent: 'Abrir reciente',
       noRecent: 'Sin proyectos recientes',
     },
-    rail: { explorer: 'Explorador', risks: 'Riesgos', repairs: 'Reparaciones', servers: 'Servidores', agent: 'Conecta tu agente', map: 'Mapa 3D', git: 'Ramas de git', chat: 'Agente' },
+    rail: { catalog: 'Catálogo', explorer: 'Explorador', risks: 'Riesgos', repairs: 'Reparaciones', servers: 'Servidores', agent: 'Conecta tu agente', lab: 'Laboratorio', map: 'Mapa 3D', git: 'Ramas de git', chat: 'Agente' },
     // Shown when hovering a rail button or a tab
     railInfo: {
+      catalog: 'Placas, sensores y motores para arrastrar al banco.',
+      lab: 'Tu circuito en 3D: arrastra, conecta y simula.',
       explorer: 'Las partes de tu proyecto con etiquetas y su semáforo.',
       risks: 'Lo que está en rojo o amarillo. Desde aquí Qubi lo repara.',
       repairs: 'Historial de lo que se reparó, lo que falta verificar y lo que falló.',
@@ -1212,6 +1216,7 @@ export const strings = {
     explorerGuide: 'Guía de tu proyecto: qué hay en cada parte.',
     allFiles: 'Archivos sueltos',
     sidebar: {
+      catalog: 'Catálogo',
       explorer: 'Explorador',
       risks: 'Riesgos',
       repairs: 'Reparaciones',
@@ -1306,7 +1311,7 @@ export const strings = {
   },
 
   // View switcher on the map
-  stageTabs: { map: 'Mapa', git: 'Git' },
+  stageTabs: { lab: 'Laboratorio', map: 'Mapa', git: 'Git' },
 
   chat: {
     agentName: 'Agente Qubbot',

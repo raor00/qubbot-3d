@@ -37,6 +37,7 @@ const MAX_SCOPE_FOLDERS = 2;
 const MAX_SCOPE_CHARS = 200;
 const { startMcpServer, MAX_READ_BYTES, isBlockedPath, isBlockedRealPath } = require('./mcpServer');
 const servers = require('./servers');
+const lab = require('./lab');
 
 const workspace = new Workspace();
 const audit = []; // log of everything done on disk
@@ -597,6 +598,23 @@ handle('fs:delete', 'delete', async (rel) => {
 });
 
 
+// --- Arduino lab (electron/lab.js): the person's own bench, no dialogs; only fixed files ---
+function labAnswer(action, target, fn) {
+  return async (_e, ...args) => {
+    try {
+      const data = await fn(...args);
+      log(action, target, true);
+      return { ok: true, data };
+    } catch (err) {
+      log(action, target, false, err.message);
+      return { ok: false, error: err.message };
+    }
+  };
+}
+ipcMain.handle('lab:load', labAnswer('lab:load', lab.DESIGN_FILE, () => lab.loadDesignText(workspace, { guard: refuseSecretTarget })));
+ipcMain.handle('lab:save', labAnswer('lab:save', lab.DESIGN_FILE, (text) => lab.saveDesign(workspace, text, { guard: refuseSecretTarget })));
+ipcMain.handle('lab:export', (e, kind, content) => labAnswer('lab:export', Object.hasOwn(lab.EXPORT_FILES, kind) ? lab.EXPORT_FILES[kind] : '', () => lab.exportFile(workspace, kind, content, { guard: refuseSecretTarget }))(e));
+
 // --- Local MCP server: the user's agent (Claude Code, Cursor, Codex, Gemini or the chat CLIs) ---
 // Tools that need what the window knows (traffic lights, the map) are answered by the renderer.
 const pending = new Map();
@@ -738,6 +756,20 @@ const mcpHandlers = {
   },
   platanus_show_folder: ({ path: rel }) => askRenderer('show_folder', { path: rel }),
 };
+
+// The lab's tools (electron/lab.js): read the bench, compute the change and save laboratorio/circuito.json through
+// platanus_write_file above (approval per mode, backup, agent:changed). One at a time: each may wait for the person.
+const labQueue = lab.createQueue();
+for (const name of lab.LAB_TOOLS) {
+  const writes = lab.LAB_WRITE_TOOLS.includes(name);
+  mcpHandlers[`platanus_${name}`] = (args, context = {}) => labQueue(async () => {
+    if (!workspace.root) throw new Error(t.mcp.noProject);
+    if (writes && context.worker) throw new Error(t.mcp.lab.workerRefused);
+    const result = await lab.applyLabTool(name, args, await lab.readDesign(workspace, { guard: refuseSecretTarget }));
+    if (result.changed) await mcpHandlers.platanus_write_file({ path: lab.DESIGN_FILE, content: result.text, reason: result.reason }, context);
+    return result.reply;
+  });
+}
 
 // A symlink inside the project may point to a secret: check where the path really lands. For a file
 // that does not exist yet, resolve its nearest existing parent folder and add the rest of the path.

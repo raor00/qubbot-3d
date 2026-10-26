@@ -6,10 +6,11 @@ import { allFiles, baseName } from '../models/fileTree.js';
 import { LEVEL_RANK, worstLevel } from '../models/securityModel.js';
 import { fileTags, folderGuide } from '../models/folderTags.js';
 
-export const STAGES = ['map', 'git'];
+export const STAGES = ['lab', 'map', 'git'];
 
 // 'supabase' has no dock button: it opens with a click on the Supabase node of the map
-export const SIDE_VIEWS = ['explorer', 'risks', 'repairs', 'servers', 'agent', 'supabase'];
+// 'catalog': the lab's parts to drag onto the bench (where the explorer was; the explorer stays next to it)
+export const SIDE_VIEWS = ['catalog', 'explorer', 'risks', 'repairs', 'servers', 'agent', 'supabase'];
 
 export class ShellViewModel {
   #projectModel;
@@ -18,8 +19,8 @@ export class ShellViewModel {
   #session = -1;
 
   store = new Observable({
-    side: 'explorer',
-    stage: 'map', // 'map' | 'git'
+    side: 'catalog',
+    stage: 'lab', // 'lab' | 'map' | 'git'
     sidebarOpen: false, // the map comes first: the side panel floats over it and starts folded
     chatOpen: false, // the chat waits for the person: opening a project does not open it
     projectName: '',
